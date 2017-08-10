@@ -4,6 +4,8 @@ version = "0.1.0"
 authors = ["Colin O'Brien <cobrien@rapid7.com>"]
 
 [dependencies]
+rmp = "*"
+rmpv = "*"
 rmp-serde = "0.13.*"
 serde_json = "1.0.2"
 serde = "1.0.2"
