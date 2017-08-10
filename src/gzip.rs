@@ -53,7 +53,7 @@ impl Gunzipper {
         };
 
         let contents = buf.into_inner();
-        self.unpacker.unpack(contents);
+        self.unpacker.unpack(path,  contents);
     }
 
     fn route_msg(&mut self, msg: GunzipperMessage) {
