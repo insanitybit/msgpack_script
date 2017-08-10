@@ -1,7 +1,17 @@
+use rmpv::ValueRef;
+use rmpv::decode::read_value_ref;
+use rmp::decode::{read_str_from_slice, DecodeStringError};
 use rmps::{Deserializer, Serializer};
 use serde::{Deserialize, Serialize};
 use std::thread;
 use std::time::Duration;
+use std::io::{Cursor, Write};
+use std::error::Error;
+use std::path::PathBuf;
+use std::fs::File;
+
+use serde_json;
+use serde_json::{Value, to_string_pretty};
 
 use two_lock_queue::{unbounded, Sender, Receiver, RecvTimeoutError};
 
@@ -19,32 +29,41 @@ impl Msgunpacker {
         }
     }
 
-    pub fn unpack(&self, contents: Vec<u8>) {
-        let mut de = Deserializer::new(&contents[..]);
-
-        let s: String = match Deserialize::deserialize(&mut de) {
-            Ok(s) => s,
-            Err(e)  => {
-                println!("Failed to deserialize from msgpack: {}", e);
+    pub fn unpack(&self, path: PathBuf, contents: Vec<u8>) {
+        let mut buf = &contents[..];
+        let p = match read_value_ref(&mut buf) {
+            Ok(parsed) => {
+                parsed
+            },
+            Err(e) => {
+                println!("failed to unpack with: {}", e);
+                //                    }
                 self.completion_handler.failed();
                 return
             }
         };
 
-        println!("{}", s);
+        let js  = to_string_pretty(&p.to_string()).unwrap();
+
+        let mut new_path = path.file_stem().unwrap().to_str().unwrap();
+        let new_path = format!("./{}.json", new_path);
+
+        let mut f = File::create(new_path).unwrap();
+        f.write_all(js.as_ref());
+
         self.completion_handler.success();
     }
 
     fn route_msg(&mut self, msg: MsgunpackerMessage) {
         match msg {
-            MsgunpackerMessage::Unpack {contents} => self.unpack(contents)
+            MsgunpackerMessage::Unpack {path, contents} => self.unpack(path, contents)
         }
     }
 }
 
 
 enum MsgunpackerMessage {
-    Unpack {contents: Vec<u8>}
+    Unpack { path: PathBuf, contents: Vec<u8>}
 }
 
 #[derive(Clone)]
@@ -84,9 +103,10 @@ impl MsgunpackerActor {
         msgpack_actor
     }
 
-    pub fn unpack(&self, contents: Vec<u8>) {
+    pub fn unpack(&self,  path: PathBuf, contents: Vec<u8>) {
         self.sender.send(MsgunpackerMessage::Unpack {
-           contents
+            path,
+            contents
         });
     }
 }
