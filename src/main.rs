@@ -11,6 +11,7 @@ extern crate spmc;
 extern crate two_lock_queue;
 extern crate rmp;
 extern crate rmpv;
+extern crate serdeconv;
 
 use clap::{Arg, App};
 use libflate::gzip::Decoder;
