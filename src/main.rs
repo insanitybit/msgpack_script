@@ -9,6 +9,8 @@ extern crate threadpool;
 extern crate num_cpus;
 extern crate spmc;
 extern crate two_lock_queue;
+extern crate rmp;
+extern crate rmpv;
 
 use clap::{Arg, App};
 use libflate::gzip::Decoder;
@@ -50,28 +52,12 @@ fn main() {
                 .required(true)
                 .help("Sets a custom config file"),
         )
-        .arg(
-            Arg::with_name("output")
-                .short("o")
-                .long("output")
-                .value_name("FILE")
-                .required(true)
-                .help("Sets a custom config file"),
-        )
-        .arg(Arg::with_name("recurse").short("r").long("recurse").help(
-            "Recursively walks the directory, printing out gizip files",
-        ))
         .get_matches();
 
 
     let input_path = matches.value_of("input").unwrap();
-    let output_path = matches.value_of("output").unwrap();
 
     let input_path = Path::new(&input_path);
-
-    if input_path.is_file() {
-        return;
-    }
 
     let completion_handler = CompletionHandler::new();
 
