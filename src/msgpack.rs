@@ -9,6 +9,7 @@ use std::io::{Cursor, Write};
 use std::error::Error;
 use std::path::PathBuf;
 use std::fs::File;
+use serdeconv::from_msgpack_slice;
 
 use serde_json;
 use serde_json::{Value, to_string_pretty};
@@ -31,19 +32,9 @@ impl Msgunpacker {
 
     pub fn unpack(&self, path: PathBuf, contents: Vec<u8>) {
         let mut buf = &contents[..];
-        let p = match read_value_ref(&mut buf) {
-            Ok(parsed) => {
-                parsed
-            },
-            Err(e) => {
-                println!("failed to unpack with: {}", e);
-                //                    }
-                self.completion_handler.failed();
-                return
-            }
-        };
+        let p: Value = from_msgpack_slice(buf).unwrap();
 
-        let js  = to_string_pretty(&p.to_string()).unwrap();
+        let js  = to_string_pretty(&p).unwrap();
 
         let mut new_path = path.file_stem().unwrap().to_str().unwrap();
         let new_path = format!("./{}.json", new_path);
